@@ -20,7 +20,7 @@ export default function SelectionActionBar({
 
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 w-[90%] max-w-md sm:max-w-lg lg:max-w-2xl transform transition-all duration-300">
+      <div className="fixed bottom-24 lg:bottom-8 left-1/2 z-50 -translate-x-1/2 w-[90%] max-w-md sm:max-w-lg lg:max-w-2xl transform transition-all duration-300">
       <div className="flex items-center justify-between rounded-[24px] bg-slate-900 px-4 py-3 shadow-[0_20px_40px_rgba(0,0,0,0.25)] sm:px-6 sm:py-4">
         <div className="flex items-center gap-3 sm:gap-4">
           <button
