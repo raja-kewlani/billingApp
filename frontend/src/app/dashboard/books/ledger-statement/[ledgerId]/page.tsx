@@ -10,6 +10,7 @@ import { LedgerStatement as LedgerStatementData } from "@/interfaces/ledger";
 import { getApiBaseUrl } from "@/lib/api";
 import { apiRequest } from "@/lib/http";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { exportLedgerStatementPdf } from "@/lib/pdfExport";
 
 import { EmptyState, MetricTile, PageHero, SurfaceCard } from "../../../shared/WorkspaceUi";
 import { useFirmScope } from "../../../shared/useFirmScope";
@@ -27,6 +28,7 @@ export default function LedgerStatementPage() {
   const { fromDate: globalFromDate, toDate: globalToDate } = useDateFilter();
   const { showToast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   
   const [filters, setFilters] = useState({ fromDate: globalFromDate, toDate: globalToDate });
   const [appliedFilters, setAppliedFilters] = useState({ fromDate: globalFromDate, toDate: globalToDate });
@@ -105,6 +107,79 @@ export default function LedgerStatementPage() {
     }
   }
 
+  async function exportLedgerPdf() {
+    if (!statement || !activeFirmId) return;
+    setIsExportingPdf(true);
+    try {
+      // Fetch firm details for the header
+      const { data: firmData } = await supabase
+        .from("firms")
+        .select("name, mailing_name, address_lane1, city, state, pincode")
+        .eq("id", activeFirmId)
+        .single();
+
+      const firm = firmData
+        ? {
+            name: firmData.name || "",
+            mailingName: firmData.mailing_name || firmData.name || "",
+            address: [firmData.address_lane1, firmData.city, firmData.state, firmData.pincode]
+              .filter(Boolean)
+              .join(", "),
+          }
+        : { name: "" };
+
+      const ledger = statement.ledger;
+
+      // Build book label — for bank ledgers show "[NAME]  Book", for cash use "Cash Book"
+      const isBank = ledger.template_type === "bank";
+      const isCash = (ledger.group_name || "").toLowerCase().includes("cash");
+      let bookLabel = `${ledger.name}  Book`;
+      if (isCash) bookLabel = "Cash  Book";
+
+      // Build ledger subtitle (bank address if available)
+      let ledgerSubtitle: string | undefined;
+      if (isBank && ledger.bank_details) {
+        const bd = ledger.bank_details;
+        ledgerSubtitle = [bd.bank_name, bd.branch_name, bd.account_number]
+          .filter(Boolean)
+          .join("\n");
+      } else if (!isBank && !isCash) {
+        // Party ledger — show address if available
+        const pd = ledger.party_details;
+        if (pd?.address) ledgerSubtitle = pd.address;
+      }
+
+      exportLedgerStatementPdf({
+        firm,
+        ledgerName: ledger.name,
+        bookLabel,
+        ledgerSubtitle,
+        fromDate: appliedFilters.fromDate || undefined,
+        toDate: appliedFilters.toDate || undefined,
+        openingBalance: statement.opening_balance,
+        openingBalanceType: statement.opening_balance_type,
+        closingBalance: statement.closing_balance,
+        closingBalanceType: statement.closing_balance_type,
+        totalDebit: statement.total_debit,
+        totalCredit: statement.total_credit,
+        rows: statement.rows.map((r) => ({
+          voucher_date: r.voucher_date,
+          category: r.category,
+          particulars: r.particulars,
+          voucher_number: r.voucher_number,
+          debit_amount: r.debit_amount,
+          credit_amount: r.credit_amount,
+        })),
+        filename: `${ledger.name.replace(/[^A-Za-z0-9]/g, "_")}_statement.pdf`,
+      });
+      showToast("Ledger exported to PDF", "success");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Unable to export PDF", "error");
+    } finally {
+      setIsExportingPdf(false);
+    }
+  }
+
   const openingBalanceLabel = statement ? formatBalance(statement.opening_balance, statement.opening_balance_type) : "";
   const closingBalanceLabel = statement ? formatBalance(statement.closing_balance, statement.closing_balance_type) : "";
 
@@ -132,6 +207,14 @@ export default function LedgerStatementPage() {
             className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isExporting ? "Exporting..." : "Export Excel"}
+          </button>
+          <button
+            type="button"
+            onClick={exportLedgerPdf}
+            disabled={!statement || isExportingPdf}
+            className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isExportingPdf ? "Generating..." : "Export PDF"}
           </button>
         </div>
       </PageHero>

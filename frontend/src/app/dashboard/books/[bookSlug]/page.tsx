@@ -11,6 +11,7 @@ import { getApiBaseUrl } from "@/lib/api";
 import { apiRequest } from "@/lib/http";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useToast } from "@/context/ToastContext";
+import { exportRegisterPdf } from "@/lib/pdfExport";
 
 import { EmptyState, PageHero, SurfaceCard } from "../../shared/WorkspaceUi";
 import { useFirmScope } from "../../shared/useFirmScope";
@@ -74,6 +75,7 @@ export default function BookDetailPage() {
   const { showToast } = useToast();
   const [exportingLedgerId, setExportingLedgerId] = useState<string | null>(null);
   const [isExportingBook, setIsExportingBook] = useState(false);
+  const [isExportingBookPdf, setIsExportingBookPdf] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -204,6 +206,51 @@ export default function BookDetailPage() {
     }
   }
 
+  async function exportBookPdf() {
+    if (!activeFirmId || bookSlug === "ledger" || rows.length === 0) return;
+    setIsExportingBookPdf(true);
+    try {
+      // Fetch firm details for the PDF header
+      const { data: firmData } = await supabase
+        .from("firms")
+        .select("name, mailing_name, address_lane1, city, state, pincode")
+        .eq("id", activeFirmId)
+        .single();
+
+      const firm = firmData
+        ? {
+            name: firmData.name || "",
+            mailingName: firmData.mailing_name || firmData.name || "",
+            address: [firmData.address_lane1, firmData.city, firmData.state, firmData.pincode]
+              .filter(Boolean)
+              .join(", "),
+          }
+        : { name: "" };
+
+      exportRegisterPdf({
+        firm,
+        registerTitle: copy.title,
+        fromDate: fromDate || undefined,
+        toDate: toDate || undefined,
+        rows: rows.map((r) => ({
+          voucher_date: r.voucher_date,
+          voucher_number: r.voucher_number,
+          category: r.category,
+          party_name: r.party_name,
+          primary_ledger_name: r.primary_ledger_name,
+          narration: r.narration,
+          amount: r.amount,
+        })),
+        filename: `${copy.title.replace(/[^A-Za-z0-9]/g, "_")}.pdf`,
+      });
+      showToast(`${copy.title} exported to PDF`, "success");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Unable to export PDF", "error");
+    } finally {
+      setIsExportingBookPdf(false);
+    }
+  }
+
   async function handleBulkDelete() {
     if (!activeFirmId || selectedIds.size === 0) return;
     setIsDeleting(true);
@@ -252,6 +299,14 @@ export default function BookDetailPage() {
             className="rounded-full border border-emerald-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isExportingBook ? "Exporting..." : (bookSlug === "sales-register" ? "Export Tally Excel" : "Export Excel")}
+          </button>
+          <button
+            type="button"
+            onClick={exportBookPdf}
+            disabled={isExportingBookPdf || rows.length === 0}
+            className="rounded-full border border-rose-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isExportingBookPdf ? "Generating..." : "Export PDF"}
           </button>
         </div>
       ) : null}
