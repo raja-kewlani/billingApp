@@ -12,7 +12,7 @@ export function isPartyLedger(ledger: LedgerDetail) {
 
 export function isCashBankLedger(ledger: LedgerDetail) {
   const groupName = (ledger.group_name || "").toLowerCase();
-  return ledger.template_type === "bank" || groupName.includes("cash");
+  return ledger.template_type === "bank" || groupName.includes("cash") || groupName.includes("bank");
 }
 
 export function isTaxLedger(ledger: LedgerDetail) {
@@ -77,7 +77,7 @@ export function useVoucherData(activeFirmId: string | null, supabase: SupabaseCl
     : null;
 
   const partyLedgers = useMemo(
-    () => ledgers.filter(isPartyLedger).map((ledger) => ({ value: ledger.id, label: `${ledger.name} • ${ledger.group_name || "Party"}` })),
+    () => ledgers.filter((l) => isPartyLedger(l) || isCashBankLedger(l)).map((ledger) => ({ value: ledger.id, label: `${ledger.name} • ${ledger.group_name || "Party"}` })),
     [ledgers],
   );
   const cashBankLedgers = useMemo(

@@ -295,7 +295,7 @@ export default function BookDetailPage() {
             <EmptyState title={search ? "No matches found" : "No ledgers yet"} description={search ? "Try adjusting your search terms." : "Create ledgers first so books and voucher selectors have something real to work with."} />
           ) : (
             <div className="space-y-3 pb-20">
-              {filteredLedgers.map((ledger) => (
+              {filteredLedgers.map((ledger, index) => (
                 <SelectionRow
                   key={ledger.id}
                   id={ledger.id}
@@ -303,6 +303,7 @@ export default function BookDetailPage() {
                   isSelectionMode={isSelectionMode}
                   onToggle={toggleSelection}
                   onLongPress={enterSelectionMode}
+                  autoFocus={index === 0}
                 >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between w-full">
                     <div>
@@ -348,7 +349,7 @@ export default function BookDetailPage() {
           <EmptyState title={search ? "No matches found" : "No entries yet"} description={search ? "Try adjusting your search terms." : "Once vouchers are created, this book will start filling with live rows."} />
         ) : (
           <div className="space-y-3 pb-20">
-            {filteredRows.map((row) => (
+            {filteredRows.map((row, index) => (
               <SelectionRow
                 key={row.id}
                 id={row.id}
@@ -357,6 +358,7 @@ export default function BookDetailPage() {
                 onToggle={toggleSelection}
                 onLongPress={enterSelectionMode}
                 onClickHref={`/dashboard/vouchers/${row.id}`}
+                autoFocus={index === 0}
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between w-full">
                   <div>

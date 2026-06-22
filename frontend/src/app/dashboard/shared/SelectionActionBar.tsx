@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { ConfirmModal } from "./WorkspaceUi";
 
 interface SelectionActionBarProps {
   selectedCount: number;
@@ -13,10 +14,13 @@ export default function SelectionActionBar({
   onDelete,
   isDeleting = false,
 }: SelectionActionBarProps) {
+  const [showConfirm, setShowConfirm] = useState(false);
+
   if (selectedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 w-[90%] max-w-md sm:max-w-lg lg:max-w-2xl transform transition-all duration-300">
+    <>
+      <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 w-[90%] max-w-md sm:max-w-lg lg:max-w-2xl transform transition-all duration-300">
       <div className="flex items-center justify-between rounded-[24px] bg-slate-900 px-4 py-3 shadow-[0_20px_40px_rgba(0,0,0,0.25)] sm:px-6 sm:py-4">
         <div className="flex items-center gap-3 sm:gap-4">
           <button
@@ -34,7 +38,7 @@ export default function SelectionActionBar({
         </div>
         
         <button
-          onClick={onDelete}
+          onClick={() => setShowConfirm(true)}
           disabled={isDeleting}
           className="flex items-center gap-2 rounded-full bg-rose-500/20 px-4 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-bold tracking-wide text-rose-400 transition-colors hover:bg-rose-500/30 disabled:opacity-50"
         >
@@ -51,5 +55,21 @@ export default function SelectionActionBar({
         </button>
       </div>
     </div>
+
+    <ConfirmModal
+      isOpen={showConfirm}
+      title="Delete forever?"
+      message={`Permanently delete ${selectedCount} selected items? This cannot be undone.`}
+      confirmLabel={isDeleting ? "Deleting..." : "Delete forever"}
+      cancelLabel="Cancel"
+      onConfirm={() => {
+        onDelete();
+        // Modal will close either after success/failure by parent resetting state or we could do it here
+        // If we close immediately, it looks abrupt.
+      }}
+      onCancel={() => setShowConfirm(false)}
+      isDanger={true}
+    />
+    </>
   );
 }

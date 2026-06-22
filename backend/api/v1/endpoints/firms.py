@@ -250,7 +250,7 @@ async def fetch_gst_details(request: Request, gstin: str, jwt: str = Depends(get
                 except:
                     err_data = {"message": response.text}
                 print(f"Error Response: {err_data}")
-                detail = err_data.get("message") or f"API error: {response.status_code}"
+                detail = err_data.get("message") or err_data.get("error") or f"API error: {response.status_code}"
                 raise HTTPException(status_code=response.status_code, detail=detail)
 
             res_json = response.json()

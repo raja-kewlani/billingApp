@@ -52,7 +52,20 @@ export function buildVoucherPayload({
 
   if (family === "invoice") {
     const partyLedgerId = requireSelection(form.party_ledger_id, "party ledger");
-    const mainLedgerId = requireSelection(form.main_ledger_id, "sales/purchase ledger");
+
+    const isSalesType = category === "Sales" || category === "Credit Note";
+    const targetName = isSalesType ? "Sales" : "Purchase";
+    const targetGroup = isSalesType ? "Sales Accounts" : "Purchase Accounts";
+    
+    let mainLedgerId = form.main_ledger_id;
+    if (!mainLedgerId) {
+      const defaultLedger = ledgers.find((l) => l.name === targetName && l.group_name === targetGroup) || ledgers.find((l) => l.name === targetName);
+      if (defaultLedger) {
+        mainLedgerId = defaultLedger.id;
+      } else {
+        throw new Error(`Could not automatically find the default ${targetName} ledger. Please ensure it exists.`);
+      }
+    }
 
     const finalInvoiceLines = invoiceLines.filter((line) => {
       const isPristine =

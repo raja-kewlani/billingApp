@@ -260,23 +260,6 @@ export function VoucherPartySection({
                         mandatory={true}
                       />
                     </div>
-                    <div className="flex flex-col gap-1 mt-1.5">
-                      <label className="text-[13px] font-bold text-slate-700">
-                        {meta.category === "Sales" || meta.category === "Credit Note" ? "Sales Ledger" : "Purchase Ledger"} <span className="text-rose-500">*</span>
-                      </label>
-                      <ComboboxField
-                        inline
-                        compact={true}
-                        chevron={true}
-                        value={form.main_ledger_id}
-                        onChange={(value) => setForm((prev) => ({ ...prev, main_ledger_id: value }))}
-                        options={mainLedgers.length > 0 ? mainLedgers : allLedgerOptions}
-                        placeholder={`Select ${meta.category === "Sales" || meta.category === "Credit Note" ? "Sales" : "Purchase"} Ledger…`}
-                        createHref="/dashboard/create/ledger"
-                        disabled={readOnly}
-                        mandatory={true}
-                      />
-                    </div>
 
                     {selectedPartyLedger?.party_details && (
                       <div className="mt-3 flex flex-col gap-2 rounded-xl border border-emerald-100/50 bg-emerald-50/30 p-3.5 text-[15px] font-medium text-slate-700">

@@ -12,6 +12,10 @@ import { useToast } from "@/context/ToastContext";
 
 import { EmptyState, PageHero, SurfaceCard, ConfirmModal } from "../../shared/WorkspaceUi";
 import { useFirmScope } from "../../shared/useFirmScope";
+import { useSelection } from "../../shared/useSelection";
+import SelectionRow from "../../shared/SelectionRow";
+import SelectionActionBar from "../../shared/SelectionActionBar";
+import { getApiBaseUrl } from "@/lib/api";
 
 type SectionKey = "items" | "hsn" | "uom";
 
@@ -189,6 +193,15 @@ export default function InventorySectionPage() {
   const queryClient = useQueryClient();
 
   const [search, setSearch] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const {
+    selectedIds,
+    isSelectionMode,
+    toggleSelection,
+    clearSelection,
+    enterSelectionMode,
+  } = useSelection();
 
   // (Moved searchParams logic into the section useEffect below)
 
@@ -368,6 +381,7 @@ export default function InventorySectionPage() {
         resetForms();
     }
     setSearch("");
+    clearSelection();
   }, [section]);
 
   function handleIgstChange(value: number) {
@@ -446,6 +460,42 @@ export default function InventorySectionPage() {
         }
       }
       showToast(errMsg, "error");
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (!activeFirmId || selectedIds.size === 0) return;
+    setIsDeleting(true);
+    try {
+      const endpoint = section === "uom" ? "/api/uom/bulk-delete" : "/api/items/bulk-delete";
+      const { data, error } = await supabase.auth.getSession();
+      if (!data.session) throw new Error("No session");
+      
+      const res = await fetch(`${getApiBaseUrl()}${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${data.session.access_token}`
+        },
+        body: JSON.stringify({ ids: Array.from(selectedIds) })
+      });
+      
+      if (!res.ok) throw new Error(`Failed to delete selected ${section}`);
+      const result = await res.json();
+      
+      if (result.success?.length) {
+        showToast(`Successfully deleted ${result.success.length} items.`, "success");
+      }
+      if (result.failed?.length) {
+        showToast(`Failed to delete ${result.failed.length} items. They might be in use.`, "error");
+      }
+      
+      clearSelection();
+      void queryClient.invalidateQueries({ queryKey: [section] });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Bulk delete failed", "error");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -799,13 +849,21 @@ export default function InventorySectionPage() {
 
   const content = section === "items"
     ? (
-      <div className="space-y-3">
+      <div className="space-y-3 pb-20">
         {items.length === 0 ? (
           <EmptyState title="No items yet" description="Create the first item so vouchers can pick inventory lines from a real master." />
-        ) : items.map((item) => {
+        ) : items.map((item, index) => {
           return (
-            <div key={item.id} className="rounded-[26px] border border-slate-100 bg-white/92 p-5 shadow-sm">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <SelectionRow
+              key={item.id}
+              id={item.id}
+              isSelected={selectedIds.has(item.id)}
+              isSelectionMode={isSelectionMode}
+              onToggle={toggleSelection}
+              onLongPress={enterSelectionMode}
+              autoFocus={index === 0}
+            >
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between w-full">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-lg font-semibold text-slate-950">{item.name}</p>
@@ -855,7 +913,7 @@ export default function InventorySectionPage() {
                   </button>
                 </div>
               </div>
-            </div>
+            </SelectionRow>
           );
         })}
       </div>
@@ -879,9 +937,18 @@ export default function InventorySectionPage() {
       )
       : section === "uom"
         ? (
-          <div className="space-y-3">
-            {uom.length === 0 ? <EmptyState title="No UOM defined yet" description="Add the units that items and voucher quantity fields will use." /> : uom.map((row) => (
-              <div key={row.id} className="flex flex-col gap-4 rounded-[24px] border border-slate-100 bg-white/92 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-3 pb-20">
+            {uom.length === 0 ? <EmptyState title="No UOM defined yet" description="Add the units that items and voucher quantity fields will use." /> : uom.map((row, index) => (
+              <SelectionRow
+                key={row.id}
+                id={row.id}
+                isSelected={selectedIds.has(row.id)}
+                isSelectionMode={isSelectionMode}
+                onToggle={toggleSelection}
+                onLongPress={enterSelectionMode}
+                autoFocus={index === 0}
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between w-full">
                 <div>
                   <div className="flex items-center gap-3 mb-1">
                     <p className="text-lg font-bold text-slate-950">{row.name}</p>
@@ -899,7 +966,8 @@ export default function InventorySectionPage() {
                     Delete
                   </button>
                 </div>
-              </div>
+                </div>
+              </SelectionRow>
             ))}
           </div>
         )
@@ -1007,6 +1075,15 @@ export default function InventorySectionPage() {
         onCancel={() => setDeleteTarget(null)}
         isDanger={!deleteTargetInUse}
       />
+      
+      {(section === "items" || section === "uom") && (
+        <SelectionActionBar
+          selectedCount={selectedIds.size}
+          onClear={clearSelection}
+          onDelete={handleBulkDelete}
+          isDeleting={isDeleting}
+        />
+      )}
     </div>
   );
 }

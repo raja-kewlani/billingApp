@@ -89,7 +89,7 @@ export function VoucherWorkbench({
       return;
     }
     if (!activeFirmId) return;
-    
+
     if (!isDraftLoaded) {
       try {
         const draftStr = sessionStorage.getItem(`draft-voucher-${activeFirmId}-${slug}`);
@@ -105,7 +105,7 @@ export function VoucherWorkbench({
             setForm(prev => ({ ...prev, discount_type: defaultDiscountType }));
           }
         }
-      } catch(e) {}
+      } catch (e) { }
       setIsDraftLoaded(true);
     }
   }, [isEditing, activeFirmId, slug, isDraftLoaded]);
@@ -217,7 +217,7 @@ export function VoucherWorkbench({
         if (!line.item_id) return line;
         const item = items.find((i) => i.id === line.item_id);
         const newLine = recalcLine(line, item, taxMode);
-        
+
         if (
           newLine.igst_amount !== line.igst_amount ||
           newLine.cgst_amount !== line.cgst_amount ||
@@ -228,7 +228,7 @@ export function VoucherWorkbench({
         ) {
           hasChanges = true;
         }
-        
+
         return newLine;
       });
 
@@ -361,7 +361,7 @@ export function VoucherWorkbench({
       const igstR = line.igstRate || 0;
       const cgstR = line.cgstRate || 0;
       const sgstR = line.sgstRate || 0;
-      
+
       let rateKey = "0%";
       if (igstR > 0) rateKey = `${igstR}%`;
       else if (cgstR + sgstR > 0) rateKey = `${cgstR + sgstR}%`;
@@ -497,11 +497,6 @@ export function VoucherWorkbench({
       if (isEditing) {
         router.push(`/dashboard/vouchers/${result.id}`);
       } else {
-        if (activeFirmId) {
-          await queryClient.invalidateQueries({
-            queryKey: ["next-voucher-number", activeFirmId, meta.category],
-          });
-        }
         sessionStorage.removeItem(`draft-voucher-${activeFirmId}-${slug}`);
         setForm((prev) => ({
           ...getEmptyForm(globalFromDate, globalToDate),
@@ -516,6 +511,21 @@ export function VoucherWorkbench({
         setTimeout(() => {
           initFocus();
         }, 50);
+      }
+
+      if (activeFirmId) {
+        // Invalidate all queries that could be affected by a voucher change
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["next-voucher-number", activeFirmId, meta.category] }),
+          queryClient.invalidateQueries({ queryKey: ["register"] }),
+          queryClient.invalidateQueries({ queryKey: ["ledgers"] }),
+          queryClient.invalidateQueries({ queryKey: ["ledger-statement"] }),
+          queryClient.invalidateQueries({ queryKey: ["overview"] }),
+          queryClient.invalidateQueries({ queryKey: ["stock-summary"] }),
+          queryClient.invalidateQueries({ queryKey: ["stock-monthly"] }),
+          queryClient.invalidateQueries({ queryKey: ["stock-vouchers"] }),
+          queryClient.invalidateQueries({ queryKey: ["voucher"] }),
+        ]);
       }
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Unable to save voucher", "error");
@@ -540,7 +550,7 @@ export function VoucherWorkbench({
       if (response && response.length > 0) {
         const originalInvoiceId = response[0].id;
         const detail = await apiRequest<VoucherDetail>(supabase, `/api/vouchers/${originalInvoiceId}`);
-        
+
         // Auto-fill form details
         setForm((prev) => ({
           ...prev,
@@ -583,7 +593,7 @@ export function VoucherWorkbench({
       category: categoryToFetch,
       voucher_number: invoiceNo,
     });
-    
+
     const response = await apiRequest<any[]>(supabase, `/api/vouchers/?${params.toString()}`);
     if (response && response.length > 0) {
       const invoice = response[0];
@@ -606,7 +616,7 @@ export function VoucherWorkbench({
           <div className="h-8 w-32 animate-shimmer-fast rounded-full bg-slate-200" />
         </div>
         <div className="h-px w-full bg-slate-100" />
-        
+
         <div className="grid grid-cols-2 gap-8">
           <div className="space-y-4">
             <div className="h-5 w-24 animate-shimmer-fast rounded-full bg-slate-200" />
@@ -617,14 +627,14 @@ export function VoucherWorkbench({
             <div className="h-12 w-full animate-shimmer-fast rounded-xl bg-slate-200" style={{ animationDelay: "0.1s" }} />
           </div>
         </div>
-        
+
         <div className="mt-8 space-y-4 flex-1">
           <div className="h-8 w-full animate-shimmer-fast rounded-xl bg-slate-100" style={{ animationDelay: "0.2s" }} />
           <div className="h-12 w-full animate-shimmer-fast rounded-xl bg-slate-100" style={{ animationDelay: "0.3s" }} />
           <div className="h-12 w-full animate-shimmer-fast rounded-xl bg-slate-100" style={{ animationDelay: "0.4s" }} />
           <div className="h-12 w-full animate-shimmer-fast rounded-xl bg-slate-100" style={{ animationDelay: "0.5s" }} />
         </div>
-        
+
         <div className="h-px w-full bg-slate-100 mt-auto" />
         <div className="flex justify-between items-center pt-2">
           <div className="h-10 w-48 animate-shimmer-fast rounded-xl bg-slate-200" />
