@@ -116,12 +116,26 @@ export default function FirmsPage() {
                       {firm.state && <span>{firm.state}</span>}
                     </div>
                   </div>
-                  <Link
-                    href={`/dashboard?firm_id=${firm.id}`}
-                    className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-900"
-                  >
-                    Open workspace
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    {firm.has_unresolved_feedback && profile?.role !== 'merchant' && (
+                      <div 
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600 shadow-sm" 
+                        title="Unresolved client issues"
+                      >
+                        <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                          <line x1="12" y1="9" x2="12" y2="13"></line>
+                          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                      </div>
+                    )}
+                    <Link
+                      href={`/dashboard?firm_id=${firm.id}`}
+                      className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-900"
+                    >
+                      Open workspace
+                    </Link>
+                  </div>
                 </div>
               ))
             ) : (

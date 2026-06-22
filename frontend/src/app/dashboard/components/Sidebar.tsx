@@ -107,6 +107,8 @@ const NAV_ITEMS: NavItem[] = [
       { label: "Firm Invites", href: "/dashboard/settings/invites" },
       { label: "Paused Access", href: "/dashboard/settings/paused-access" },
       { label: "Period Block", href: "/dashboard/settings/period-block" },
+      { label: "Provide Feedback", href: "/dashboard/feedback" },
+      { label: "Client Issues", href: "/dashboard/settings/client-issues" },
     ],
   },
 ];
@@ -124,8 +126,11 @@ export default function Sidebar() {
       return {
         ...item,
         children: item.children.filter((child) => {
-          if (child.label === "Firm Invites" || child.label === "Paused Access") {
+          if (child.label === "Firm Invites" || child.label === "Paused Access" || child.label === "Client Issues") {
             return isCAAdmin || isCAEmployee;
+          }
+          if (child.label === "Provide Feedback") {
+            return !isCAAdmin && !isCAEmployee;
           }
           return true;
         }),

@@ -20,6 +20,7 @@ export interface Firm extends BaseEntity {
   ifsc_code?: string;
   branch_name?: string;
   parent_firm_id: string | null; // Null for CA firms, UUID for Merchant firms
+  has_unresolved_feedback?: boolean;
 }
 
 /**

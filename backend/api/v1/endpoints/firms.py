@@ -195,13 +195,22 @@ async def list_my_firms(jwt: str = Depends(get_verified_jwt)) -> Any:
 
     if profile["role"] in ("ca_admin", "ca_employee"):
         # CA God Mode: sees all firms without restriction
-        firms = (
+        firms_resp = (
             await supabase.table("firms")
             .select("*")
             .order("name")
             .execute()
         )
-        return firms.data or []
+        firms = firms_resp.data or []
+        
+        # Check for unresolved feedback to display red mark
+        feedback_resp = await supabase.table("feedback").select("firm_id").eq("is_solved", False).execute()
+        unresolved_firm_ids = {f["firm_id"] for f in (feedback_resp.data or [])}
+        
+        for f in firms:
+            f["has_unresolved_feedback"] = f["id"] in unresolved_firm_ids
+            
+        return firms
 
     # Merchant: only firms they have explicit access to
     access_rows = (
