@@ -25,6 +25,7 @@ export type InvoiceLineState = {
   item_id: string;
   quantity: number;
   unit_price: number;
+  inclusive_rate?: number;
   discount_percent: number;
   discount_amount: number;
   taxable_amount: number;

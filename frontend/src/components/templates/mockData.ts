@@ -42,6 +42,7 @@ export const MOCK_INVOICE_DATA: InvoiceData = {
       hsnSac: "8302",
       quantity: 1,
       uom: "NOS",
+      inclusiveRate: 2991.3,
       rate: 2535.0,
       taxableAmount: 2535.0,
       igstRate: 18,

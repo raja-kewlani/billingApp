@@ -173,6 +173,7 @@ export function VoucherWorkbench({
     mainLedgers,
     allLedgerOptions,
     nextNumberData,
+    rateInclusiveTaxToggle,
   } = useVoucherData(activeFirmId, supabase, meta.category, isEditing);
 
   const voucherDateObj = form.voucher_date ? new Date(form.voucher_date) : null;
@@ -216,7 +217,7 @@ export function VoucherWorkbench({
       const newLines = prevLines.map((line) => {
         if (!line.item_id) return line;
         const item = items.find((i) => i.id === line.item_id);
-        const newLine = recalcLine(line, item, taxMode);
+        const newLine = recalcLine(line, item, taxMode, form.discount_type);
 
         if (
           newLine.igst_amount !== line.igst_amount ||
@@ -234,7 +235,7 @@ export function VoucherWorkbench({
 
       return hasChanges ? newLines : prevLines;
     });
-  }, [taxMode, items, meta.family]);
+  }, [taxMode, items, meta.family, form.discount_type, rateInclusiveTaxToggle]);
 
   const invoiceTotals = useMemo(() => {
     const taxable = round2(invoiceLines.reduce((sum, line) => sum + line.taxable_amount, 0));
@@ -343,6 +344,7 @@ export function VoucherWorkbench({
           hsnSac: item?.hsn_code || "",
           quantity: line.quantity,
           uom: item?.uom_name || "NOS",
+          inclusiveRate: line.inclusive_rate,
           rate: line.unit_price,
           discount: form.discount_type === "percentage" ? line.discount_percent : line.discount_amount,
           taxableAmount: line.taxable_amount,
@@ -698,6 +700,7 @@ export function VoucherWorkbench({
           showDiscount={permanentDiscountToggle}
           discountType={form.discount_type}
           onToggleDiscountType={toggleDiscountType}
+          rateInclusive={rateInclusiveTaxToggle}
         />
       ) : null}
 

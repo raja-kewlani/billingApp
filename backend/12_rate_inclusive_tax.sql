@@ -1,0 +1,1 @@
+ALTER TABLE firms ADD COLUMN IF NOT EXISTS rate_inclusive_tax_toggle BOOLEAN DEFAULT FALSE;

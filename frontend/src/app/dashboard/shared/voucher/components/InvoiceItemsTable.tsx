@@ -17,6 +17,7 @@ type InvoiceItemsTableProps = {
   showDiscount?: boolean;
   discountType?: "percentage" | "amount";
   onToggleDiscountType?: () => void;
+  rateInclusive?: boolean;
 };
 
 export function InvoiceItemsTable({
@@ -29,6 +30,7 @@ export function InvoiceItemsTable({
   showDiscount = false,
   discountType = "percentage",
   onToggleDiscountType,
+  rateInclusive = false,
 }: InvoiceItemsTableProps) {
   const [isMobileWindowOpen, setIsMobileWindowOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
@@ -68,13 +70,19 @@ export function InvoiceItemsTable({
       {/* DESKTOP VIEW (Hidden on Mobile)                                */}
       {/* ============================================================== */}
       <div className="hidden md:flex flex-1 flex-col min-h-0 overflow-x-auto custom-scrollbar border-b border-slate-100">
-        <div className="min-w-full md:min-w-[1000px] flex flex-col flex-1 min-h-0">
+        <div className={`min-w-full ${rateInclusive && showDiscount ? 'md:min-w-[1100px]' : 'md:min-w-[1000px]'} flex flex-col flex-1 min-h-0`}>
           {/* Table header */}
-          <div className={`shrink-0 grid ${showDiscount ? 'grid-cols-[40px_4fr_0.9fr_0.9fr_0.9fr_1fr_1.2fr_40px]' : 'grid-cols-[40px_5fr_0.9fr_0.9fr_0.9fr_1.2fr_40px]'} gap-2 border-b border-slate-300 pl-4 pr-4 md:pl-5 md:pr-[calc(1.25rem+8px)] py-2.5 text-[17px] font-extrabold uppercase tracking-wider text-slate-800 bg-slate-50/50 backdrop-blur-sm whitespace-nowrap`}>
+          <div className={`shrink-0 grid ${
+            rateInclusive && showDiscount ? 'grid-cols-[40px_1fr_90px_90px_140px_120px_130px_140px_40px]' :
+            rateInclusive ? 'grid-cols-[40px_1fr_90px_90px_140px_120px_140px_40px]' :
+            showDiscount ? 'grid-cols-[40px_1fr_90px_90px_120px_130px_140px_40px]' : 
+            'grid-cols-[40px_1fr_90px_90px_120px_140px_40px]'
+          } gap-2 border-b border-slate-200 bg-slate-50 pl-4 pr-4 md:pl-5 md:pr-[calc(1.25rem+8px)] py-3 text-[12px] font-bold uppercase tracking-wider text-slate-500 whitespace-nowrap`}>
             <div className="text-center">#</div>
             <div>Name of Item</div>
             <div>HSN/SAC</div>
             <div>Qty</div>
+            {rateInclusive && <div>Rate (Inc. Tax)</div>}
             <div>Rate (₹)</div>
             {showDiscount && (
               <div
@@ -89,11 +97,16 @@ export function InvoiceItemsTable({
             <div className="w-10" />
           </div>
           <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar" ref={itemsScrollRef}>
-            <div className="divide-y divide-slate-100 pt-4">
+            <div className="divide-y divide-slate-100">
               {invoiceLines.map((line, index) => (
                 <div
                   key={index}
-                  className={`group grid ${showDiscount ? 'grid-cols-[40px_4fr_0.9fr_0.9fr_0.9fr_1fr_1.2fr_40px]' : 'grid-cols-[40px_5fr_0.9fr_0.9fr_0.9fr_1.2fr_40px]'} items-center gap-2 p-5 py-2 scroll-mt-12 transition-colors duration-100`}
+                  className={`group grid ${
+                    rateInclusive && showDiscount ? 'grid-cols-[40px_1fr_90px_90px_140px_120px_130px_140px_40px]' :
+                    rateInclusive ? 'grid-cols-[40px_1fr_90px_90px_140px_120px_140px_40px]' :
+                    showDiscount ? 'grid-cols-[40px_1fr_90px_90px_120px_130px_140px_40px]' : 
+                    'grid-cols-[40px_1fr_90px_90px_120px_140px_40px]'
+                  } items-center gap-2 p-5 py-2 scroll-mt-12 transition-colors duration-100`}
                   style={{ "--tw-bg-opacity": "1" } as React.CSSProperties}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLElement).style.background = "var(--voucher-row-hover)";
@@ -140,13 +153,35 @@ export function InvoiceItemsTable({
                       data-mandatory={index === 0 || !!line.item_id ? "true" : undefined}
                     />
                   </div>
+                  {rateInclusive && (
+                    <div className="block">
+                      <input
+                        disabled={readOnly}
+                        type="number"
+                        step="0.01"
+                        value={line.inclusive_rate || ""}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          const item = items.find(i => i.id === line.item_id);
+                          let taxRate = 0;
+                          if (item?.taxability === 'Taxable') {
+                            taxRate = taxMode === 'inter' ? item.igst_rate : (item.cgst_rate + item.sgst_rate);
+                          }
+                          const unitPrice = val / (1 + taxRate/100);
+                          updateInvoiceLine(index, { inclusive_rate: val, unit_price: unitPrice });
+                        }}
+                        placeholder="0.00"
+                        className="mono-num h-12 w-full rounded-lg border border-transparent bg-transparent px-2 text-[17px] font-semibold text-slate-800 outline-none transition-all hover:border-slate-500 focus:border-tally-400 focus:bg-white focus:ring-2 focus:ring-tally-500/[0.16]"
+                      />
+                    </div>
+                  )}
                   <div className="block">
                     <input
                       disabled={readOnly}
                       type="number"
                       step="0.01"
                       value={line.unit_price || ""}
-                      onChange={(e) => updateInvoiceLine(index, { unit_price: Number(e.target.value) })}
+                      onChange={(e) => updateInvoiceLine(index, { unit_price: Number(e.target.value), inclusive_rate: 0 })}
                       placeholder="0.00"
                       className="mono-num h-12 w-full rounded-lg border border-transparent bg-transparent px-2 text-[17px] font-semibold text-slate-800 outline-none transition-all hover:border-slate-500 focus:border-tally-400 focus:bg-white focus:ring-2 focus:ring-tally-500/[0.16]"
                       data-mandatory={index === 0 || !!line.item_id ? "true" : undefined}
@@ -308,6 +343,7 @@ export function InvoiceItemsTable({
           showDiscount={showDiscount}
           discountType={discountType}
           onToggleDiscountType={onToggleDiscountType}
+          rateInclusive={rateInclusive}
         />
       )}
 

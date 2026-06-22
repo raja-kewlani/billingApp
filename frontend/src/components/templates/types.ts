@@ -35,6 +35,7 @@ export interface InvoiceLineItem {
   hsnSac?: string;
   quantity: number;
   uom?: string;
+  inclusiveRate?: number;
   rate: number;
   discount?: number;
   taxableAmount: number;

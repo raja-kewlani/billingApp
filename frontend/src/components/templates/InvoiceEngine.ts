@@ -40,6 +40,9 @@ export function detectColumns(data: InvoiceData): ColumnDef[] {
   const hasDiscount = items.some(
     (i) => i.discount != null && parseFloat(String(i.discount)) > 0
   );
+  const hasInclusiveRate = items.some(
+    (i) => i.inclusiveRate != null && parseFloat(String(i.inclusiveRate)) > 0
+  );
 
   // Determine GST type: IGST (inter-state) vs CGST+SGST (intra-state)
   const isInterState = data.party?.state && data.company?.state && data.party.state.toLowerCase() !== data.company.state.toLowerCase();
@@ -85,6 +88,17 @@ export function detectColumns(data: InvoiceData): ColumnDef[] {
     bucket: "fixed",
     getValue: (item) => (item as any).isEmptyRow ? "" : `${item.quantity !== undefined ? item.quantity : ""} ${item.uom || ""}`.trim(),
   });
+
+  if (hasInclusiveRate) {
+    columns.push({
+      key: "inclusiveRate",
+      label: "Rate (Inc. Tax)",
+      width: "",
+      align: "right",
+      format: "currency",
+      bucket: "amount",
+    });
+  }
 
   columns.push({
     key: "rate",
@@ -173,6 +187,7 @@ const FIXED_WIDTHS: Record<string, number> = {
 };
 
 const AMOUNT_WIDTHS: Record<string, number> = {
+  inclusiveRate: 11,
   rate: 10,
   discount: 8,
   taxableAmount: 11,

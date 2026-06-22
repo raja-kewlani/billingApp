@@ -17,6 +17,7 @@ type MobileItemsWindowProps = {
   showDiscount?: boolean;
   discountType?: "percentage" | "amount";
   onToggleDiscountType?: () => void;
+  rateInclusive?: boolean;
 };
 
 export function MobileItemsWindow({
@@ -29,6 +30,7 @@ export function MobileItemsWindow({
   showDiscount = false,
   discountType = "percentage",
   onToggleDiscountType,
+  rateInclusive = false,
 }: MobileItemsWindowProps) {
   const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
@@ -73,7 +75,7 @@ export function MobileItemsWindow({
         if (lineIndex !== index) return line;
         const merged = { ...line, ...partial };
         const item = items.find((entry) => entry.id === merged.item_id);
-        return recalcLine(merged, item, taxMode, discountType);
+        return recalcLine(merged, item, taxMode, discountType, rateInclusive);
       }),
     );
   }
@@ -240,8 +242,37 @@ export function MobileItemsWindow({
                   )}
                   {!isEditing && <div className="absolute inset-0 cursor-pointer" onClick={() => toggleEditing(index)} />}
                 </div>
+                {/* RATE (INC. TAX) */}
+                {rateInclusive && (
+                  <div className={`flex flex-col p-2.5 px-3 border-r relative border-b ${isEditing ? 'border-slate-200/60 bg-white' : 'border-slate-200 bg-white'}`}>
+                    <span className={`text-[11px] font-bold uppercase tracking-wider mb-1 text-slate-500`}>RATE (INC. TAX) (₹)</span>
+                    {isEditing ? (
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        className="w-full bg-transparent text-[14px] font-semibold text-slate-800 outline-none mono-num placeholder:text-slate-300"
+                        value={line.inclusive_rate || ""}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          const item = items.find(i => i.id === line.item_id);
+                          let taxRate = 0;
+                          if (item?.taxability === 'Taxable') {
+                            taxRate = taxMode === 'inter' ? item.igst_rate : (item.cgst_rate + item.sgst_rate);
+                          }
+                          const unitPrice = val / (1 + taxRate/100);
+                          updateInvoiceLine(index, { inclusive_rate: val, unit_price: unitPrice });
+                        }}
+                        placeholder="0.00"
+                        disabled={readOnly}
+                      />
+                    ) : (
+                      <span className={`text-[14px] font-semibold mono-num ${isEditing ? 'text-slate-800' : 'text-slate-700'}`}>{line.inclusive_rate || "0.00"}</span>
+                    )}
+                    {!isEditing && <div className="absolute inset-0 cursor-pointer" onClick={() => toggleEditing(index)} />}
+                  </div>
+                )}
                 {/* RATE */}
-                <div className={`flex flex-col p-2.5 px-3 border-r relative ${isEditing ? 'border-slate-200/60 bg-white' : 'border-slate-200 bg-white'}`}>
+                <div className={`flex flex-col p-2.5 px-3 border-r relative ${rateInclusive ? 'border-b' : ''} ${isEditing ? 'border-slate-200/60 bg-white' : 'border-slate-200 bg-white'}`}>
                   <span className={`text-[11px] font-bold uppercase tracking-wider mb-1 text-slate-500`}>RATE (₹)</span>
                   {isEditing ? (
                     <input 
@@ -249,7 +280,7 @@ export function MobileItemsWindow({
                       step="0.01"
                       className="w-full bg-transparent text-[14px] font-semibold text-slate-800 outline-none mono-num placeholder:text-slate-300"
                       value={line.unit_price || ""}
-                      onChange={(e) => updateInvoiceLine(index, { unit_price: Number(e.target.value) })}
+                      onChange={(e) => updateInvoiceLine(index, { unit_price: Number(e.target.value), inclusive_rate: 0 })}
                       placeholder="0.00"
                       disabled={readOnly}
                     />
