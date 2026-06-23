@@ -216,10 +216,17 @@ async def _build_inventory_line_payloads(
                 detail=f"Item {item_id} does not belong to the target firm",
             )
 
+        # unit_price is stored as NUMERIC(15,2) in the DB. Inclusive-tax calcs can
+        # produce values like 84.745762…  Round NOW so the DB constraint
+        # ROUND(qty*unit_price-discount, 2) == taxable_amount always holds.
+        rounded_unit_price = Decimal(str(line.unit_price)).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+
         expected_taxable = max(
             Decimal("0.00"),
             (
-                Decimal(str(line.quantity)) * Decimal(str(line.unit_price))
+                Decimal(str(line.quantity)) * rounded_unit_price
                 - Decimal(str(line.discount_amount))
             )
         ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
@@ -250,7 +257,7 @@ async def _build_inventory_line_payloads(
             "uom": uom_name,
             "taxability": item["taxability"],
             "quantity": float(line.quantity),
-            "unit_price": float(line.unit_price),
+            "unit_price": float(rounded_unit_price),   # use rounded value
             "discount_amount": float(line.discount_amount),
             "taxable_amount": float(actual_taxable),
             "igst_rate": line.igst_rate,
