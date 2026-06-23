@@ -180,6 +180,8 @@ export function BillWiseDetailsModal({
     [pendingBills, usedRefNames],
   );
 
+  if (!open) return null;
+
   return (
     <div className={`fixed top-0 right-0 bottom-0 z-[100] flex flex-col justify-end sm:justify-center sm:items-center sm:p-6 lg:p-8 bg-black/40 backdrop-blur-sm transition-all duration-400 ease-[cubic-bezier(0.2,0.8,0.2,1)] left-0 ${isSidebarCollapsed ? "lg:left-[var(--sidebar-space-collapsed)]" : "lg:left-[var(--sidebar-space-expanded)]"}`}>
       {/* Modal Container */}
