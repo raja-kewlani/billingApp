@@ -259,7 +259,7 @@ export function MobileItemsWindow({
                           if (item?.taxability === 'Taxable') {
                             taxRate = taxMode === 'inter' ? item.igst_rate : (item.cgst_rate + item.sgst_rate);
                           }
-                          const unitPrice = val / (1 + taxRate/100);
+                          const unitPrice = Math.round((val / (1 + taxRate/100)) * 100) / 100;
                           updateInvoiceLine(index, { inclusive_rate: val, unit_price: unitPrice });
                         }}
                         placeholder="0.00"
