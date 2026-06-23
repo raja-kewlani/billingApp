@@ -9,9 +9,10 @@ interface Props {
   setForm: React.Dispatch<React.SetStateAction<LedgerFormState>>;
   isFetchingGst: boolean;
   onFetchGstDetails: () => void;
+  templateType: "party" | "bank" | "tax" | "core";
 }
 
-export function LedgerPartySection({ form, setForm, isFetchingGst, onFetchGstDetails }: Props) {
+export function LedgerPartySection({ form, setForm, isFetchingGst, onFetchGstDetails, templateType }: Props) {
   const p = form.party_details;
 
   function updateParty(patch: Partial<LedgerFormState["party_details"]>) {
@@ -129,37 +130,43 @@ export function LedgerPartySection({ form, setForm, isFetchingGst, onFetchGstDet
           </Field>
         </div>
 
-        <LabeledToggle
-          checked={p.maintain_bill_by_bill}
-          label="Maintain bill-by-bill"
-          description="Useful for receivables and payables tracking."
-          onChange={(next) => updateParty({ maintain_bill_by_bill: next })}
-        />
+        {templateType !== "bank" && (
+          <LabeledToggle
+            checked={p.maintain_bill_by_bill}
+            label="Maintain bill-by-bill"
+            description="Useful for receivables and payables tracking."
+            onChange={(next) => updateParty({ maintain_bill_by_bill: next })}
+          />
+        )}
 
-        <div className="grid gap-6 md:grid-cols-2">
-          <Field label="Default Credit Days">
-            <Input
-              type="number"
-              placeholder="0"
-              value={p.default_credit_days || ""}
-              onChange={(e: TextFieldChangeEvent) =>
-                updateParty({ default_credit_days: Number(e.target.value) })
-              }
+        {templateType !== "bank" && (
+          <>
+            <div className="grid gap-6 md:grid-cols-2">
+              <Field label="Default Credit Days">
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={p.default_credit_days || ""}
+                  onChange={(e: TextFieldChangeEvent) =>
+                    updateParty({ default_credit_days: Number(e.target.value) })
+                  }
+                />
+              </Field>
+            </div>
+
+            <LabeledToggle
+              checked={false}
+              label="Check for credit days during voucher entry"
+              onChange={() => {}}
             />
-          </Field>
-        </div>
 
-        <LabeledToggle
-          checked={false}
-          label="Check for credit days during voucher entry"
-          onChange={() => {}}
-        />
-
-        <LabeledToggle
-          checked={false}
-          label="Set/Alter additional GST details"
-          onChange={() => {}}
-        />
+            <LabeledToggle
+              checked={false}
+              label="Set/Alter additional GST details"
+              onChange={() => {}}
+            />
+          </>
+        )}
       </div>
     </SurfaceCard>
   );

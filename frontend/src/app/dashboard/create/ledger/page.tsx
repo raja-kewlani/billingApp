@@ -88,12 +88,13 @@ export default function LedgerCreatePage() {
         isLoading={isLoading}
       />
 
-      {templateType === "party" && (
+      {(templateType === "party" || templateType === "bank") && (
         <LedgerPartySection
           form={form}
           setForm={setForm}
           isFetchingGst={isFetchingGst}
           onFetchGstDetails={() => void handleFetchGstDetails()}
+          templateType={templateType}
         />
       )}
 

@@ -180,7 +180,7 @@ export function useLedgerForm() {
         }
       }
 
-      if (templateType === "party") {
+      if (templateType === "party" || templateType === "bank") {
         const gstType = form.party_details.gst_registration_type;
         const gstin = form.party_details.gstin?.trim();
 
@@ -198,7 +198,7 @@ export function useLedgerForm() {
 
         if (!form.party_details.state.trim()) {
           showToast(
-            "State is mandatory for Party ledgers (Debtors/Creditors) to calculate GST.",
+            `State is mandatory for ${templateType === "bank" ? "Bank" : "Party"} ledgers to calculate GST.`,
             "error",
           );
           return;
@@ -230,10 +230,10 @@ export function useLedgerForm() {
               }
             : null,
         party_details:
-          templateType === "party"
+          templateType === "party" || templateType === "bank"
             ? {
-                maintain_bill_by_bill: form.party_details.maintain_bill_by_bill,
-                default_credit_days: form.party_details.default_credit_days || null,
+                maintain_bill_by_bill: templateType === "bank" ? false : form.party_details.maintain_bill_by_bill,
+                default_credit_days: templateType === "bank" ? null : form.party_details.default_credit_days || null,
                 mailing_name: form.party_details.mailing_name?.trim() || null,
                 address: form.party_details.address?.trim() || null,
                 state: form.party_details.state?.trim() || null,
