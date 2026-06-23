@@ -9,7 +9,8 @@ export function recalcLine(
   line: InvoiceLineState,
   item: ItemDetail | undefined,
   taxMode: TaxMode,
-  discountType: "percentage" | "amount" = "percentage"
+  discountType: "percentage" | "amount" = "percentage",
+  rateInclusive: boolean = false
 ) {
   const quantity = Number(line.quantity || 0);
   const unitPrice = Number(line.unit_price || 0);

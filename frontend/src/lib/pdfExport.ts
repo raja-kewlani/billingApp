@@ -209,9 +209,10 @@ export function exportLedgerStatementPdf(opts: LedgerStatementPdfOptions): void 
   const tableBody: (string | { content: string; styles?: object })[][] = [];
 
   // Opening balance row
+  const obLabel = opts.openingBalanceType === "Dr" ? "To Opening Balance b/d" : "By Opening Balance b/d";
   tableBody.push([
     { content: fmtDate(opts.fromDate || ""), styles: { fontStyle: "normal" as const } },
-    { content: "Opening Balance", styles: { fontStyle: "bold" as const } },
+    { content: obLabel, styles: { fontStyle: "bold" as const } },
     "",
     "",
     opts.openingBalanceType === "Dr"
@@ -246,39 +247,37 @@ export function exportLedgerStatementPdf(opts: LedgerStatementPdfOptions): void 
     ]);
   }
 
-  // Totals rows
-  tableBody.push([
-    "",
-    "",
-    "",
-    "",
-    { content: fmtAmtFull(opts.totalDebit), styles: { fontStyle: "bold" as const, halign: "right" as const, lineWidth: { top: 0.3 } as unknown as number } },
-    { content: fmtAmtFull(opts.totalCredit), styles: { fontStyle: "bold" as const, halign: "right" as const, lineWidth: { top: 0.3 } as unknown as number } },
-  ]);
 
-  // Closing balance row
-  const cbLabel = opts.closingBalanceType === "Dr" ? "To  Closing Balance" : "By  Closing Balance";
+
+  // Closing balance row (Balancing figure)
+  // If balance is Dr, it means Debit > Credit. So we write "By Closing Balance c/d" on the Credit side.
+  // If balance is Cr, it means Credit > Debit. So we write "To Closing Balance c/d" on the Debit side.
+  const cbLabel = opts.closingBalanceType === "Dr" ? "By Closing Balance c/d" : "To Closing Balance c/d";
   tableBody.push([
     "",
     { content: cbLabel, styles: { fontStyle: "bold" as const } },
     "",
     "",
-    opts.closingBalanceType === "Dr"
+    opts.closingBalanceType === "Cr"
       ? { content: fmtAmtFull(opts.closingBalance), styles: { fontStyle: "bold" as const, halign: "right" as const } }
       : "",
-    opts.closingBalanceType === "Cr"
+    opts.closingBalanceType === "Dr"
       ? { content: fmtAmtFull(opts.closingBalance), styles: { fontStyle: "bold" as const, halign: "right" as const } }
       : "",
   ]);
 
   // Grand total row (balancing row)
+  const totalDebitCol = (opts.openingBalanceType === "Dr" ? opts.openingBalance : 0) + opts.totalDebit;
+  const totalCreditCol = (opts.openingBalanceType === "Cr" ? opts.openingBalance : 0) + opts.totalCredit;
+  const grandTotalAmount = Math.max(totalDebitCol, totalCreditCol);
+
   tableBody.push([
     "",
     "",
     "",
     "",
-    { content: fmtAmtFull(opts.totalDebit + (opts.closingBalanceType === "Cr" ? opts.closingBalance : 0)), styles: { fontStyle: "bold" as const, halign: "right" as const } },
-    { content: fmtAmtFull(opts.totalCredit + (opts.closingBalanceType === "Dr" ? opts.closingBalance : 0)), styles: { fontStyle: "bold" as const, halign: "right" as const } },
+    { content: fmtAmtFull(grandTotalAmount), styles: { fontStyle: "bold" as const, halign: "right" as const } },
+    { content: fmtAmtFull(grandTotalAmount), styles: { fontStyle: "bold" as const, halign: "right" as const } },
   ]);
 
   let pageCount = 0;
