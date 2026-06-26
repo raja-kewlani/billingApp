@@ -392,7 +392,7 @@ export function VoucherWorkbench({
     }));
 
     const partyLedger = ledgers.find((l) => l.id === form.party_ledger_id);
-    const isPurchase = meta.category === "Purchase" || meta.category === "Debit Note";
+    const isPurchase = meta.category === "Purchase";
 
     const firmAsCompany = {
       name: firmDetails.name,

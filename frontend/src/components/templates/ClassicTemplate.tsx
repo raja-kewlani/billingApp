@@ -271,11 +271,21 @@ function CustomerMetaBlock({ data }: { data: PreparedInvoice["original"] }) {
         <col style={{ width: "16.66%" }} />
       </colgroup>
       <tbody>
-        {/* PAN + TYPE + COPY LABEL */}
+        {/* COMPANY TAX IDS + TYPE + COPY LABEL */}
         <tr>
           <td colSpan={2} style={{ border: BORDER, padding: CELL_PAD, fontWeight: 700 }}>
-            <span style={{ fontWeight: 700 }}>PAN : </span>
-            {data.company.pan}
+            {data.company.gstin && (
+              <div>
+                <span style={{ fontWeight: 700 }}>GSTIN : </span>
+                {data.company.gstin}
+              </div>
+            )}
+            {data.company.pan && (
+              <div>
+                <span style={{ fontWeight: 700 }}>PAN : </span>
+                {data.company.pan}
+              </div>
+            )}
           </td>
           <td
             colSpan={2}
